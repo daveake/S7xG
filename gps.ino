@@ -7,6 +7,9 @@
 /*                                                                            */
 /* ========================================================================== */
 
+int GotGGA = 0;
+ulong Timeout = 0;
+
 char Hex(char Character)
 {
   char HexTable[] = "0123456789ABCDEF";
@@ -45,7 +48,7 @@ void ProcessLine(char *Buffer, int Count)
   int Satellites, date;
   char ns, ew;
   char TimeString[16], LatString[16], LongString[16], Temp[4];
-  
+ 
   if (GPSChecksumOK(Buffer, Count))
   {
     Satellites = 0;
@@ -54,6 +57,9 @@ void ProcessLine(char *Buffer, int Count)
     {
       int lock;
       char hdop[16], Altitude[16];
+
+      GotGGA = 1;
+      Timeout = 0;
       
       if (sscanf(Buffer+7, "%16[^,],%16[^,],%c,%[^,],%c,%d,%d,%[^,],%[^,]", TimeString, LatString, &ns, LongString, &ew, &lock, &Satellites, hdop, Altitude) >= 1)
       { 
@@ -84,7 +90,7 @@ void ProcessLine(char *Buffer, int Count)
         GPS.GotTime = 0;
       }
       
-      if (ShowGPS)
+      if ((ShowGPS & 1) == 1)
       {
         HostPort.printf("GPS=%02d:%02d:%02d,%.5f,%.5f,%05ld\r\n", GPS.Hours, GPS.Minutes, GPS.Seconds,
                                                                   GPS.Latitude, GPS.Longitude, GPS.Altitude); 
@@ -111,24 +117,34 @@ void SetupGPS(void)
   digitalWrite(GNSS_LS,  HIGH);
 
   // keep RST low to ensure proper IC reset
+  HostPort.println("keep RST low to ensure proper IC reset ...");
   delay(200);
 
   // release
+  HostPort.println("Release RST ...");
   digitalWrite(GNSS_RST, HIGH);
 
   // give Sony GNSS few ms to warm up
+  HostPort.println("Delay for GPS to power up ...");
   delay(100);
 
   // Leave pin floating
+  HostPort.println("Leave RST floating ...");
   pinMode(GNSS_RST, INPUT);
 
   // GGA + GSA + RMC
+  HostPort.println("Send BSSL Command ...");
   GPSPort.write("@BSSL 0x25\r\n");
-  delay(250);
   
   // GPS + GLONASS
+  HostPort.println("Send GNS Command ...");
   GPSPort.write("@GNS 0x3\r\n");
-  delay(250);  
+
+  HostPort.println("Ready");
+
+  // Set flag and timeout so we do a hard reset if no NMEA soon
+  GotGGA = 0;
+  Timeout = millis() + 3000;
 }
 
 void CheckGPS(void)
@@ -137,11 +153,11 @@ void CheckGPS(void)
   static int Length=0;
   char Character;
 
-  while(GPSPort.available())
+  while (GPSPort.available())
   { 
     Character = GPSPort.read();    
-
-    if (Character == '$')
+    
+    if ((Character == '$') || (Character == '['))
     {
       Line[0] = Character;
       Length = 1;
@@ -156,9 +172,28 @@ void CheckGPS(void)
       if (Character == '\n')
       {
         Line[Length] = '\0';
-        ProcessLine(Line, Length);
+        
+        if ((ShowGPS & 2) == 2)
+        {
+          HostPort.println(Line);
+        }
+        
+        if (Line[0] == '$')
+        {
+          ProcessLine(Line, Length);
+        }
         Length = 0;
       }
+    }
+  }
+
+  if ((Timeout > 0) && !GotGGA)
+  {
+    if (millis() >= Timeout)
+    {
+      HostPort.println("Cold start ...");
+      GPSPort.write("@GCD\r\n");
+      Timeout = millis() + 3000;
     }
   }
 }
