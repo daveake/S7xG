@@ -152,7 +152,7 @@ void SetParametersFromLoRaMode(int LoRaMode)
 
 void SetupLoRa()
 {
-  Settings.Frequency = 434.275;
+  Settings.Frequency = 434.280;
 
   SetParametersFromLoRaMode(1);
 
@@ -479,8 +479,8 @@ void CheckRx()
     HostPort.print("PacketSNR="); HostPort.println(SNR);
     
 
-    HostPort.print("Packet size = "); HostPort.println(Bytes);
-    HostPort.println((char *)Message);
+    // HostPort.print("Packet size = "); HostPort.println(Bytes);
+    // HostPort.println((char *)Message);
 
     // Telemetry='$$LORA1,108,20:30:39,51.95027,-2.54445,00141,0,0,11*9B74
 

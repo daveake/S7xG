@@ -92,10 +92,37 @@ void ProcessLine(char *Buffer, int Count)
       
       if ((ShowGPS & 1) == 1)
       {
-        HostPort.printf("GPS=%02d:%02d:%02d,%.5f,%.5f,%05ld\r\n", GPS.Hours, GPS.Minutes, GPS.Seconds,
-                                                                  GPS.Latitude, GPS.Longitude, GPS.Altitude); 
+        HostPort.printf("GPS=%02d:%02d:%02d,%.5f,%.5f,%ld,%d,%d\r\n", GPS.Hours, GPS.Minutes, GPS.Seconds,
+                                                                      GPS.Latitude, GPS.Longitude, GPS.Altitude,
+                                                                      GPS.Speed, GPS.Direction);
       }
     }
+    else if (strncmp(Buffer+3, "RMC", 3) == 0)
+    {
+      // $GPRMC,224008.00,A,5157.01406,N,00232.65882,W,0.087,,070115,,,A*64
+      char *ptr, *ptr2;
+      int i;
+      
+      for (i=0,ptr=Buffer; i<7; i++)
+      {
+          ptr = strchr(ptr, ',') + 1;
+      }
+      
+      ptr2 = strchr(ptr, ',');
+      if (ptr2)
+      {
+        *ptr2 = '\0';
+        GPS.Speed = (int)atof(ptr);
+
+        ptr = ptr2 + 1;
+        ptr2 = strchr(ptr, ',');
+        if (ptr2)
+        {
+          GPS.Direction = (int)atof(ptr);
+          *ptr2 = '\0';
+        }
+      }
+    }    
   }
   else
   {

@@ -9,7 +9,7 @@
 | BOARD PART NUMBER - Nucleo L073RZ                                                                      |
 | U(S)ART SUPPORT   - Enabled (no generic serial)                                                        |
 | USB SUPPORT       - None                                                                               |
-| C RUNTIME LIBRARY - Newlib Nano + Float Point                                                          |
+| C RUNTIME LIBRARY - Newlib Nano + Float printf                                                          |
 | UPLOAD METHOD     - STM32CubeProgrammer(SWD)                                                           |
 |                                                                                                        |
 \*------------------------------------------------------------------------------------------------------*/
@@ -52,6 +52,8 @@ struct TGPS
   unsigned long SecondsInDay;					// Time in seconds since midnight
   float         Longitude, Latitude;
   long          Altitude;
+  int           Speed;
+  int           Direction;
   unsigned int  Satellites;
   byte          FixType;
   byte          psm_status;
