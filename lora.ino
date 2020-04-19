@@ -174,8 +174,11 @@ void UpdateClient(void)
       CurrentRSSI = readRegister(REG_RSSI_CURRENT) - 164;
     }
     
-    HostPort.print("CurrentRSSI=");
-    HostPort.println(CurrentRSSI);
+    if (ShowLoRa)
+    {
+      HostPort.print("CurrentRSSI=");
+      HostPort.println(CurrentRSSI);
+    }
     
     UpdateClientAt = millis() + 1000;
   }
@@ -236,7 +239,7 @@ int receiveMessage(unsigned char *message)
   // check for payload crc issues (0x20 is the bit we are looking for
   if((x & 0x20) == 0x20)
   {
-    HostPort.println("CRC Failure");
+    if (ShowLoRa) HostPort.println("CRC Failure");
     // reset the crc flags
     writeRegister(REG_IRQ_FLAGS, 0x20); 
     Bytes = 0;
@@ -276,7 +279,7 @@ void SetFrequency(char *Line)
 
     Settings.Frequency = Frequency;
     
-    HostPort.printf("Frequency=%.3f\r\n", Frequency);
+    if (ShowLoRa) HostPort.printf("Frequency=%.3f\r\n", Frequency);
 
     startReceiving();
   }
@@ -456,7 +459,11 @@ void CheckRx()
 
     Bytes = receiveMessage(Message);
     
-    HostPort.print("FreqErr="); HostPort.println(FrequencyError()/1000.0);
+    if (ShowLoRa)
+    {
+      HostPort.print("FreqErr=");
+      HostPort.println(FrequencyError()/1000.0);
+    }
 
     SNR = readRegister(REG_PACKET_SNR);
     SNR /= 4;
@@ -475,10 +482,13 @@ void CheckRx()
       RSSI += SNR;
     }
     
-    HostPort.print("PacketRSSI="); HostPort.println(RSSI);
-    HostPort.print("PacketSNR="); HostPort.println(SNR);
+    if (ShowLoRa)
+    {
+      HostPort.print("PacketRSSI=");
+      HostPort.println(RSSI);
+      HostPort.print("PacketSNR="); HostPort.println(SNR);
+    }
     
-
     // HostPort.print("Packet size = "); HostPort.println(Bytes);
     // HostPort.println((char *)Message);
 
@@ -490,8 +500,11 @@ void CheckRx()
     }
     else if (Message[0] == '$')
     {
-      HostPort.print("Message=");
-      HostPort.println((char *)Message);
+      if (ShowLoRa)
+      {
+        HostPort.print("Message=");
+        HostPort.println((char *)Message);
+      }
     }
     else if (Message[0] == '%')
     {
@@ -505,24 +518,30 @@ void CheckRx()
         if ((ptr2 = strchr(ptr, '\n')) != NULL)
         {
           *ptr2 = '\0';
-          HostPort.print("Message=");
-          HostPort.println(ptr);
+          if (ShowLoRa) 
+          {
+            HostPort.print("Message=");
+            HostPort.println(ptr);
+          }
           ptr = ptr2 + 1;
         }
       } while (ptr2 != NULL);
     }
     else
     {
-      HostPort.print("Hex=");
-      for (i=0; i<Bytes; i++)
+      if (ShowLoRa)
       {
-        if (Message[i] < 0x10)
+        HostPort.print("Hex=");
+        for (i=0; i<Bytes; i++)
         {
-          HostPort.print("0");
-        } 
-        HostPort.print(Message[i], HEX);
+          if (Message[i] < 0x10)
+          {
+            HostPort.print("0");
+          } 
+          HostPort.print(Message[i], HEX);
+        }
+        HostPort.println();
       }
-      HostPort.println();
     }
   }
 }

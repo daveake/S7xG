@@ -92,9 +92,9 @@ void ProcessLine(char *Buffer, int Count)
       
       if ((ShowGPS & 1) == 1)
       {
-        HostPort.printf("GPS=%02d:%02d:%02d,%.5f,%.5f,%ld,%d,%d\r\n", GPS.Hours, GPS.Minutes, GPS.Seconds,
+        HostPort.printf("GPS=%02d:%02d:%02d,%.5f,%.5f,%ld,%d,%d,%d\r\n", GPS.Hours, GPS.Minutes, GPS.Seconds,
                                                                       GPS.Latitude, GPS.Longitude, GPS.Altitude,
-                                                                      GPS.Speed, GPS.Direction);
+                                                                      GPS.Speed, GPS.Direction, GPS.Satellites);
       }
     }
     else if (strncmp(Buffer+3, "RMC", 3) == 0)
@@ -171,7 +171,7 @@ void SetupGPS(void)
 
   // Set flag and timeout so we do a hard reset if no NMEA soon
   GotGGA = 0;
-  Timeout = millis() + 3000;
+  Timeout = millis() + 5000;
 }
 
 void CheckGPS(void)
@@ -220,7 +220,7 @@ void CheckGPS(void)
     {
       HostPort.println("Cold start ...");
       GPSPort.write("@GCD\r\n");
-      Timeout = millis() + 3000;
+      Timeout = 0;
     }
   }
 }
